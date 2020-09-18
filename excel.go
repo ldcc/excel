@@ -90,7 +90,7 @@ func makeSetAxis(f *excelize.File, nameMap map[string]string, sheet string) setA
 // 导入 excel
 func LoadExcel(file *excelize.File, _nMap map[string]string, models interface{}, _sheet ...string) error {
 	var sheet = file.GetSheetName(0)
-	if len(_sheet) >= 0 {
+	if len(_sheet) > 0 {
 		sheet = _sheet[0]
 	}
 
