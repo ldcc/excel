@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	DefSheet    = "Sheet1"
-	StartCol    = "A"
-	ExcelRowIdx = "1"
+	DefSheet = "Sheet1"
+	StartCol = "A"
+	StartRow = "1"
 )
 
 // 生成 Excel 表格
@@ -77,7 +77,7 @@ func makeSetAxis(f *excelize.File, nameMap map[string]string) setAxis {
 			}
 			strcol := ComputeColumn(*col)
 			if pn {
-				_ = f.SetCellValue(DefSheet, strcol+ExcelRowIdx, name)
+				_ = f.SetCellValue(DefSheet, strcol+StartRow, name)
 			}
 			_ = f.SetCellValue(DefSheet, strcol+row, field.Interface())
 			*col++
@@ -131,7 +131,7 @@ func makeGetAxis(f *excelize.File, fieldMap map[string]string) getAxis {
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
 		for ; ; *col++ {
 			strCol := ComputeColumn(*col)
-			name, _ := f.GetCellValue(DefSheet, strCol+ExcelRowIdx)
+			name, _ := f.GetCellValue(DefSheet, strCol+StartRow)
 			if name == "" {
 				return false
 			}
