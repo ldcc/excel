@@ -2,11 +2,11 @@ package common
 
 import (
 	"fmt"
-	"git.gdqlyt.com.cn/go/base/beego/bmodel"
 	"reflect"
 	//_ "reflect"
 	"strconv"
 
+	"git.gdqlyt.com.cn/go/base/beego/bmodel"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 )
 
@@ -22,6 +22,34 @@ type (
 	setAxis func(v reflect.Value, col *int, row string, pn bool, fn setAxis)
 	getAxis func(v reflect.Value, col *int, row string, fn getAxis) (br bool)
 )
+
+//导出excel
+func BuildExcel(_models interface{}, nMap map[string]string) (*excelize.File, error) {
+	var (
+		col    = new(int)
+		file   = excelize.NewFile()
+		loop   = makeSetAxis(file, nMap)
+		sliceV = reflect.Indirect(reflect.ValueOf(_models))
+	)
+	if sliceV.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("只能接收 Slice 类型数据")
+	}
+
+	sliceLen := sliceV.Len()
+	for row := 0; row < sliceLen; row++ {
+		refV := reflect.Indirect(sliceV.Index(row))
+		if refV.Interface() == nil {
+			continue
+		}
+
+		*col = 1
+		// row 初始为 0，为字段名空 1 行，所以 +2
+		loop(refV, col, strconv.Itoa(row+2), row <= 0, loop)
+	}
+	*col--
+
+	return file, file.SetColWidth(DefSheet, StartCol, ComputeColumn(*col), 30)
+}
 
 func makeSetAxis(f *excelize.File, nameMap map[string]string) setAxis {
 	return func(v reflect.Value, col *int, row string, pn bool, fn setAxis) {
@@ -53,78 +81,6 @@ func makeSetAxis(f *excelize.File, nameMap map[string]string) setAxis {
 			}
 			_ = f.SetCellValue(DefSheet, strcol+row, field.Interface())
 			*col++
-		}
-	}
-}
-
-//导出excel
-func BuildExcel(_models interface{}, nMap map[string]string) (*excelize.File, error) {
-	var (
-		col    = new(int)
-		file   = excelize.NewFile()
-		loop   = makeSetAxis(file, nMap)
-		sliceV = reflect.Indirect(reflect.ValueOf(_models))
-	)
-	if sliceV.Kind() != reflect.Slice {
-		return nil, fmt.Errorf("只能接收 Slice 类型数据")
-	}
-
-	sliceLen := sliceV.Len()
-	for row := 0; row < sliceLen; row++ {
-		refV := reflect.Indirect(sliceV.Index(row))
-		if refV.Interface() == nil {
-			continue
-		}
-
-		*col = 1
-		// row 初始为 0，为字段名空 1 行，所以 +2
-		loop(refV, col, strconv.Itoa(row+2), row <= 0, loop)
-	}
-	*col--
-
-	return file, file.SetColWidth(DefSheet, StartCol, ComputeColumn(*col), 30)
-}
-
-func makeGetAxis(f *excelize.File, fieldMap map[string]string) getAxis {
-	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
-		for ; ; *col++ {
-			strCol := ComputeColumn(*col)
-			name, _ := f.GetCellValue(DefSheet, strCol+ExcelRowIdx)
-			if name == "" {
-				return false
-			}
-
-			fname, exist := fieldMap[name]
-			if !exist {
-				continue
-			}
-
-			// 读取单元格
-			cell, _ := f.GetCellValue(DefSheet, strCol+row)
-			if cell == "" {
-				return true
-			}
-
-			fieldV := v.FieldByName(fname)
-			switch fieldV.Kind() {
-			case reflect.String:
-				fieldV.SetString(cell)
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
-				atoi, err := strconv.Atoi(cell)
-				if err != nil {
-					continue
-				}
-				fieldV.SetInt(int64(atoi))
-			case reflect.Struct:
-				switch fieldV.Type().Name() {
-				case "BaseModel":
-					fn(fieldV, col, row, fn)
-				case "LocalTime":
-					fieldV.Set(reflect.ValueOf(bmodel.NewLocalTime(cell)))
-				case "DateTime":
-					fieldV.Set(reflect.ValueOf(bmodel.NewDateTime(cell)))
-				}
-			}
 		}
 	}
 }
@@ -169,6 +125,50 @@ func LoadExcel(file *excelize.File, _nMap map[string]string, models interface{})
 	}
 
 	return nil
+}
+
+func makeGetAxis(f *excelize.File, fieldMap map[string]string) getAxis {
+	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
+		for ; ; *col++ {
+			strCol := ComputeColumn(*col)
+			name, _ := f.GetCellValue(DefSheet, strCol+ExcelRowIdx)
+			if name == "" {
+				return false
+			}
+
+			fname, exist := fieldMap[name]
+			if !exist {
+				continue
+			}
+
+			// 读取单元格
+			cell, _ := f.GetCellValue(DefSheet, strCol+row)
+			if cell == "" {
+				return true
+			}
+
+			fieldV := v.FieldByName(fname)
+			switch fieldV.Kind() {
+			case reflect.String:
+				fieldV.SetString(cell)
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
+				atoi, err := strconv.Atoi(cell)
+				if err != nil {
+					continue
+				}
+				fieldV.SetInt(int64(atoi))
+			case reflect.Struct:
+				switch fieldV.Type().Name() {
+				case "BaseModel":
+					fn(fieldV, col, row, fn)
+				case "LocalTime":
+					fieldV.Set(reflect.ValueOf(bmodel.NewLocalTime(cell)))
+				case "DateTime":
+					fieldV.Set(reflect.ValueOf(bmodel.NewDateTime(cell)))
+				}
+			}
+		}
+	}
 }
 
 func makeval(t reflect.Type) reflect.Value {
