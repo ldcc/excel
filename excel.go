@@ -28,7 +28,7 @@ func BuildExcel(_models interface{}, nMap map[string]string) (*excelize.File, er
 	var (
 		col    = new(int)
 		file   = excelize.NewFile()
-		loop   = makeSetAxis(file, nMap)
+		loop   = makeSetAxis(file, nMap, DefSheet)
 		sliceV = reflect.Indirect(reflect.ValueOf(_models))
 	)
 	if sliceV.Kind() != reflect.Slice {
@@ -51,7 +51,7 @@ func BuildExcel(_models interface{}, nMap map[string]string) (*excelize.File, er
 	return file, file.SetColWidth(DefSheet, StartCol, ComputeColumn(*col), 30)
 }
 
-func makeSetAxis(f *excelize.File, nameMap map[string]string) setAxis {
+func makeSetAxis(f *excelize.File, nameMap map[string]string, sheet string) setAxis {
 	return func(v reflect.Value, col *int, row string, pn bool, fn setAxis) {
 		var (
 			ftype reflect.StructField
@@ -77,9 +77,9 @@ func makeSetAxis(f *excelize.File, nameMap map[string]string) setAxis {
 			}
 			strcol := ComputeColumn(*col)
 			if pn {
-				_ = f.SetCellValue(DefSheet, strcol+StartRow, name)
+				_ = f.SetCellValue(sheet, strcol+StartRow, name)
 			}
-			_ = f.SetCellValue(DefSheet, strcol+row, field.Interface())
+			_ = f.SetCellValue(sheet, strcol+row, field.Interface())
 			*col++
 		}
 	}
@@ -88,9 +88,10 @@ func makeSetAxis(f *excelize.File, nameMap map[string]string) setAxis {
 //导入excel
 func LoadExcel(file *excelize.File, _nMap map[string]string, models interface{}) error {
 	var (
+		sheet  = file.GetSheetName(0)
 		col    = new(int)
 		fMap   = make(map[string]string, len(_nMap))
-		loop   = makeGetAxis(file, fMap)
+		loop   = makeGetAxis(file, fMap, sheet)
 		ptrV   = reflect.ValueOf(models)
 		sliceV reflect.Value
 		valueT reflect.Type
@@ -127,12 +128,15 @@ func LoadExcel(file *excelize.File, _nMap map[string]string, models interface{})
 	return nil
 }
 
-func makeGetAxis(f *excelize.File, fieldMap map[string]string) getAxis {
+func makeGetAxis(f *excelize.File, fieldMap map[string]string, sheet string) getAxis {
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
 		for ; ; *col++ {
 			strCol := ComputeColumn(*col)
-			name, _ := f.GetCellValue(DefSheet, strCol+StartRow)
+			name, _ := f.GetCellValue(sheet, strCol+StartRow)
 			if name == "" {
+				if *col == 1 {
+					return true
+				}
 				return false
 			}
 
@@ -142,7 +146,7 @@ func makeGetAxis(f *excelize.File, fieldMap map[string]string) getAxis {
 			}
 
 			// 读取单元格
-			cell, _ := f.GetCellValue(DefSheet, strCol+row)
+			cell, _ := f.GetCellValue(sheet, strCol+row)
 			if cell == "" {
 				return true
 			}

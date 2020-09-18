@@ -24,8 +24,9 @@ type BaseModel struct {
 
 type Test struct {
 	BaseModel
-	Patcode    string //eg: 强戒号
-	Createdate bmodel.LocalTime
+	Patcode     string
+	Patientname string
+	Createdate  bmodel.LocalTime
 }
 
 func (t *Test) TableName() string {
@@ -33,15 +34,19 @@ func (t *Test) TableName() string {
 }
 
 var NameMap = map[string]string{
-	"Ok":           "整活",
-	"Id":           "唯一索引ID",
-	"Displayno":    "显示序号",
-	"Enablestatus": "是否停用",
-	"Deleteflag":   "是否删除",
-	"Hospitalcode": "机构编码",
-	"Dataversion":  "版本号",
-	"Patcode":      "病人编号",
-	"Createdate":   "创建时间",
+	"Ok":             "整活",
+	"Id":             "唯一索引ID",
+	"Displayno":      "显示序号",
+	"Enablestatus":   "是否停用",
+	"Deleteflag":     "是否删除",
+	"Hospitalcode":   "机构编码",
+	"Dataversion":    "版本号",
+	"Patcode":        "病人编号",
+	"Createdate":     "创建时间",
+	"Patientname":    "姓名",
+	"Homedetailaddr": "户籍地（省、市、县）",
+	"Socialnum":      "身份证号",
+	"Teamname":       "审批机关",
 }
 
 func TestBuildExcel(t *testing.T) {
@@ -74,7 +79,7 @@ func TestBuildExcel(t *testing.T) {
 				Hospitalcode: "91",
 				Dataversion:  22,
 			},
-			Patcode: "722",
+			Patcode:    "722",
 			Createdate: bmodel.NewNowLocalTime(),
 		})
 
@@ -87,7 +92,7 @@ func TestBuildExcel(t *testing.T) {
 
 func TestLoadExcel(t *testing.T) {
 	var list []Test
-	file, _ := excelize.OpenFile("test.xlsx")
+	file, _ := excelize.OpenFile("戒毒人员交接情况表.xlsx")
 	err := LoadExcel(file, NameMap, &list)
 	if err != nil {
 		t.Fatal(err)
