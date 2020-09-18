@@ -16,19 +16,22 @@ const (
 	StartRow = "1"
 )
 
-// 生成 Excel 表格
-
 type (
 	setAxis func(v reflect.Value, col *int, row string, pn bool, fn setAxis)
 	getAxis func(v reflect.Value, col *int, row string, fn getAxis) (br bool)
 )
 
-//导出excel
-func BuildExcel(_models interface{}, nMap map[string]string) (*excelize.File, error) {
+// 导出 excel
+func BuildExcel(_models interface{}, nMap map[string]string, _sheet ...string) (*excelize.File, error) {
+	var sheet = DefSheet
+	if len(_sheet) > 0 {
+		sheet = _sheet[0]
+	}
+
 	var (
 		col    = new(int)
 		file   = excelize.NewFile()
-		loop   = makeSetAxis(file, nMap, DefSheet)
+		loop   = makeSetAxis(file, nMap, sheet)
 		sliceV = reflect.Indirect(reflect.ValueOf(_models))
 	)
 	if sliceV.Kind() != reflect.Slice {
@@ -48,7 +51,7 @@ func BuildExcel(_models interface{}, nMap map[string]string) (*excelize.File, er
 	}
 	*col--
 
-	return file, file.SetColWidth(DefSheet, StartCol, ComputeColumn(*col), 30)
+	return file, file.SetColWidth(sheet, StartCol, ComputeColumn(*col), 30)
 }
 
 func makeSetAxis(f *excelize.File, nameMap map[string]string, sheet string) setAxis {
@@ -61,8 +64,7 @@ func makeSetAxis(f *excelize.File, nameMap map[string]string, sheet string) setA
 		for idx := 0; idx < v.NumField(); idx++ {
 			ftype = v.Type().Field(idx)
 			field = v.Field(idx)
-			// 如果子字段为 xorm.TableName 类型（即 repo 对象）
-			//p := reflect.New(field.Type()).Interface()
+			// 递归结构体
 			if ftype.Type.Kind() == reflect.Struct &&
 				ftype.Type.Name() != "LocalTime" &&
 				ftype.Type.Name() != "DateTime" {
@@ -85,10 +87,14 @@ func makeSetAxis(f *excelize.File, nameMap map[string]string, sheet string) setA
 	}
 }
 
-//导入excel
-func LoadExcel(file *excelize.File, _nMap map[string]string, models interface{}) error {
+// 导入 excel
+func LoadExcel(file *excelize.File, _nMap map[string]string, models interface{}, _sheet ...string) error {
+	var sheet = file.GetSheetName(0)
+	if len(_sheet) >= 0 {
+		sheet = _sheet[0]
+	}
+
 	var (
-		sheet  = file.GetSheetName(0)
 		col    = new(int)
 		fMap   = make(map[string]string, len(_nMap))
 		loop   = makeGetAxis(file, fMap, sheet)
