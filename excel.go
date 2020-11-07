@@ -3,6 +3,8 @@ package excel
 import (
 	"fmt"
 	"reflect"
+	"time"
+
 	//_ "reflect"
 	"strconv"
 
@@ -172,9 +174,11 @@ func makeGetAxis(f *excelize.File, fieldMap map[string]string, sheet string) get
 				case "BaseModel":
 					fn(fieldV, col, row, fn)
 				case "LocalTime":
-					fieldV.Set(reflect.ValueOf(bmodel.NewLocalTime(cell)))
+					dt := timeFromExcelTime(cell)
+					fieldV.Set(reflect.ValueOf(bmodel.LocalTime(dt)))
 				case "DateTime":
-					fieldV.Set(reflect.ValueOf(bmodel.NewDateTime(cell)))
+					dt := timeFromExcelTime(cell)
+					fieldV.Set(reflect.ValueOf(bmodel.DateTime(dt)))
 				}
 			}
 		}
@@ -211,4 +215,18 @@ func ComputeColumn(column int) string {
 		diff--
 	}
 	return ComputeColumn(diff) + string(rune(column-1)%26+'A')
+}
+
+func timeFromExcelTime(cell string) time.Time {
+	unix, err := strconv.ParseFloat(cell, 64)
+	if err != nil {
+		return time.Time{}
+	}
+
+	dt, err := excelize.ExcelDateToTime(unix, false)
+	if err != nil {
+		return time.Time{}
+	}
+
+	return dt
 }

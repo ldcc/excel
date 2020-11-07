@@ -27,6 +27,7 @@ type Test struct {
 	Patcode     string
 	Patientname string
 	Createdate  bmodel.LocalTime
+	Stdt        bmodel.LocalTime
 }
 
 func (t *Test) TableName() string {
@@ -47,6 +48,7 @@ var NameMap = map[string]string{
 	"Homedetailaddr": "户籍地（省、市、县）",
 	"Socialnum":      "身份证号",
 	"Teamname":       "审批机关",
+	"Stdt":           "戒毒开始日期",
 }
 
 func TestBuildExcel(t *testing.T) {
