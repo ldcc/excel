@@ -53,7 +53,7 @@ func BuildExcel(_models interface{}, nMap map[string]string, _sheet ...string) (
 	}
 	*col--
 
-	return file, file.SetColWidth(sheet, StartCol, ComputeColumn(*col), 30)
+	return file, file.SetColWidth(sheet, StartCol, ComputeColumn(*col), 20)
 }
 
 func makeSetAxis(f *excelize.File, nameMap map[string]string, sheet string) setAxis {
@@ -137,15 +137,20 @@ func LoadExcel(file *excelize.File, _nMap map[string]string, models interface{},
 }
 
 func makeGetAxis(f *excelize.File, fieldMap map[string]string, sheet string) getAxis {
+	fmaplen := len(fieldMap)
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
+		if fmaplen == 0 {
+			fmaplen = len(fieldMap)
+		}
 		for ; ; *col++ {
+			if *col >= fmaplen {
+				return true
+			}
+
 			strCol := ComputeColumn(*col)
 			name, _ := f.GetCellValue(sheet, strCol+StartRow)
 			if name == "" {
-				if *col == 1 {
-					return true
-				}
-				return false
+				return *col == 1
 			}
 
 			fname, exist := fieldMap[name]
@@ -155,7 +160,7 @@ func makeGetAxis(f *excelize.File, fieldMap map[string]string, sheet string) get
 
 			// 读取单元格
 			cell, _ := f.GetCellValue(sheet, strCol+row)
-			if cell == "" {
+			if cell == "" && *col == 1 {
 				return true
 			}
 

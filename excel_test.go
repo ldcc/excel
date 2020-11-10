@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+const (
+	ExcelFile = "test.xlsx"
+)
+
 type Data struct {
 	Ok string
 }
@@ -89,12 +93,12 @@ func TestBuildExcel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = excelFile.SaveAs("test.xlsx")
+	_ = excelFile.SaveAs(ExcelFile)
 }
 
 func TestLoadExcel(t *testing.T) {
 	var list []Test
-	file, _ := excelize.OpenFile("戒毒人员交接情况表.xlsx")
+	file, _ := excelize.OpenFile(ExcelFile)
 	err := LoadExcel(file, NameMap, &list)
 	if err != nil {
 		t.Fatal(err)
