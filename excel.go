@@ -19,15 +19,6 @@ const (
 	DefStyle = "general_style"
 )
 
-var (
-	nameMap    = make(NameMap)
-	dateMapper = make(DateMapper)
-	_          = func() int {
-		dateMapper[DefStyle] = 0
-		return 0
-	}()
-)
-
 type (
 	NameMap    map[string]string
 	DateMapper map[string]int
@@ -35,16 +26,32 @@ type (
 	getAxis    func(v reflect.Value, col *int, row string, fn getAxis) (br bool)
 )
 
-func SetNameMap(_nameMap NameMap) {
-	nameMap = _nameMap
+type Portal struct {
+	nameMap    NameMap
+	dateMapper DateMapper
 }
 
-func SetDateMapper(_datemapper DateMapper) {
-	dateMapper = _datemapper
+func NewPortal(nameMap NameMap) *Portal {
+	p := new(Portal)
+	p.nameMap = nameMap
+	p.dateMapper = make(DateMapper)
+	p.dateMapper[DefStyle] = 0
+	return p
+}
+
+func (p *Portal) SetNameMap(_nameMap NameMap) *Portal {
+	p.nameMap = _nameMap
+	return p
+}
+
+func (p *Portal) SetDateMapper(_datemapper DateMapper) *Portal {
+	p.dateMapper = _datemapper
+	p.dateMapper[DefStyle] = 0
+	return p
 }
 
 // 导出 excel
-func BuildExcel(_models interface{}, _sheet ...string) (*excelize.File, error) {
+func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.File, error) {
 	var sheet = DefSheet
 	if len(_sheet) > 0 {
 		sheet = _sheet[0]
@@ -53,7 +60,7 @@ func BuildExcel(_models interface{}, _sheet ...string) (*excelize.File, error) {
 	var (
 		col    = new(int)
 		file   = excelize.NewFile()
-		loop   = makeSetAxis(file, sheet)
+		loop   = p.makeSetAxis(file, sheet)
 		sliceV = reflect.Indirect(reflect.ValueOf(_models))
 	)
 	if sliceV.Kind() != reflect.Slice {
@@ -73,10 +80,10 @@ func BuildExcel(_models interface{}, _sheet ...string) (*excelize.File, error) {
 	}
 	*col--
 
-	return file, file.SetColWidth(sheet, StartCol, ComputeColumn(*col), 20)
+	return file, file.SetColWidth(sheet, StartCol, computeColumn(*col), 20)
 }
 
-func makeSetAxis(f *excelize.File, sheet string) setAxis {
+func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 	return func(v reflect.Value, col *int, row string, pn bool, fn setAxis) {
 		var (
 			ftype reflect.StructField
@@ -95,11 +102,11 @@ func makeSetAxis(f *excelize.File, sheet string) setAxis {
 			}
 
 			// 写入单元格
-			name, exist := nameMap[ftype.Name]
+			name, exist := p.nameMap[ftype.Name]
 			if !exist {
 				continue
 			}
-			strcol := ComputeColumn(*col)
+			strcol := computeColumn(*col)
 			if pn {
 				_ = f.SetCellValue(sheet, strcol+StartRow, name)
 			}
@@ -110,10 +117,10 @@ func makeSetAxis(f *excelize.File, sheet string) setAxis {
 				switch field.Type().Name() {
 				case "LocalTime":
 					cell = field.Interface().(bmodel.LocalTime).GetTime().UTC()
-					formatDateTime(f, sheet, strcol+row, ftype.Name)
+					p.formatDateTime(f, sheet, strcol+row, ftype.Name)
 				case "DateTime":
 					cell = field.Interface().(bmodel.DateTime).GetTime().UTC()
-					formatDateTime(f, sheet, strcol+row, ftype.Name)
+					p.formatDateTime(f, sheet, strcol+row, ftype.Name)
 				}
 			default:
 				cell = field.Interface()
@@ -129,7 +136,7 @@ func makeSetAxis(f *excelize.File, sheet string) setAxis {
 }
 
 // 导入 excel
-func LoadExcel(file *excelize.File, models interface{}, _sheet ...string) error {
+func (p *Portal) LoadExcel(file *excelize.File, models interface{}, _sheet ...string) error {
 	var sheet = file.GetSheetName(0)
 	if len(_sheet) > 0 {
 		sheet = _sheet[0]
@@ -138,7 +145,7 @@ func LoadExcel(file *excelize.File, models interface{}, _sheet ...string) error 
 	var (
 		col    = new(int)
 		fmap   = make(NameMap)
-		loop   = makeGetAxis(file, fmap, sheet)
+		loop   = p.makeGetAxis(file, fmap, sheet)
 		ptrV   = reflect.ValueOf(models)
 		sliceV reflect.Value
 		valueT reflect.Type
@@ -153,7 +160,7 @@ func LoadExcel(file *excelize.File, models interface{}, _sheet ...string) error 
 		return fmt.Errorf("只能接收指向 Slice 类型的 Pointer")
 	}
 
-	for k, v := range nameMap {
+	for k, v := range p.nameMap {
 		fmap[v] = k
 	}
 
@@ -175,15 +182,15 @@ func LoadExcel(file *excelize.File, models interface{}, _sheet ...string) error 
 	return nil
 }
 
-func makeGetAxis(f *excelize.File, fmap NameMap, sheet string) getAxis {
-	fmaplen := len(nameMap)
+func (p *Portal) makeGetAxis(f *excelize.File, fmap NameMap, sheet string) getAxis {
+	fmaplen := len(p.nameMap)
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
 		for ; ; *col++ {
 			if *col >= fmaplen {
 				return true
 			}
 
-			strCol := ComputeColumn(*col)
+			strCol := computeColumn(*col)
 			name, _ := f.GetCellValue(sheet, strCol+StartRow)
 			if name == "" {
 				return *col == 1
@@ -195,7 +202,7 @@ func makeGetAxis(f *excelize.File, fmap NameMap, sheet string) getAxis {
 			}
 
 			// 读取单元格
-			formatDateTime(f, sheet, strCol+row, DefStyle)
+			p.formatDateTime(f, sheet, strCol+row, DefStyle)
 			cell, _ := f.GetCellValue(sheet, strCol+row)
 			if cell == "" && *col == 1 {
 				return true
@@ -248,7 +255,7 @@ func indirect(v reflect.Value) reflect.Value {
 }
 
 // 根据列数计算相应的 Excel 列名
-func ComputeColumn(column int) string {
+func computeColumn(column int) string {
 	if column == 0 {
 		return ""
 	}
@@ -256,7 +263,7 @@ func ComputeColumn(column int) string {
 	if column%26 == 0 {
 		diff--
 	}
-	return ComputeColumn(diff) + string(rune(column-1)%26+'A')
+	return computeColumn(diff) + string(rune(column-1)%26+'A')
 }
 
 func timeFromExcelTime(cell string) time.Time {
@@ -273,8 +280,8 @@ func timeFromExcelTime(cell string) time.Time {
 	return dt
 }
 
-func formatDateTime(f *excelize.File, sheet, axis, fname string) {
-	styleid, exist := dateMapper[fname]
+func (p *Portal) formatDateTime(f *excelize.File, sheet, axis, fname string) {
+	styleid, exist := p.dateMapper[fname]
 	if !exist {
 		styleid = 22
 	}

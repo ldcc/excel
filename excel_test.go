@@ -96,9 +96,8 @@ func TestBuildExcel(t *testing.T) {
 			Stdt:       bmodel.NewNowDateTime(),
 		})
 
-	SetNameMap(TestNameMap)
-	SetDateMapper(TestDateFormatter)
-	excelFile, err := BuildExcel(list)
+	portal := NewPortal(TestNameMap).SetDateMapper(TestDateFormatter)
+	excelFile, err := portal.BuildExcel(list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,8 +107,8 @@ func TestBuildExcel(t *testing.T) {
 func TestLoadExcel(t *testing.T) {
 	var list []Test
 	file, _ := excelize.OpenFile(ExcelFile)
-	SetNameMap(TestNameMap)
-	err := LoadExcel(file, &list)
+	portal := NewPortal(TestNameMap)
+	err := portal.LoadExcel(file, &list)
 	if err != nil {
 		t.Fatal(err)
 	}
