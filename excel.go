@@ -234,6 +234,16 @@ func (p *Portal) makeGetAxis(f *excelize.File, fmap NameMap, sheet string) getAx
 	}
 }
 
+func (p *Portal) formatDateTime(f *excelize.File, sheet, axis, fname string) {
+	styleid, exist := p.dateMapper[fname]
+	if !exist {
+		styleid = 22
+	}
+
+	style, _ := f.NewStyle(fmt.Sprintf(`{"number_format": %d, "lang": "zh-cn"}`, styleid))
+	_ = f.SetCellStyle(sheet, axis, axis, style)
+}
+
 func makeval(t reflect.Type) reflect.Value {
 	switch t.Kind() {
 	case reflect.Ptr:
@@ -278,14 +288,4 @@ func timeFromExcelTime(cell string) time.Time {
 	}
 
 	return dt
-}
-
-func (p *Portal) formatDateTime(f *excelize.File, sheet, axis, fname string) {
-	styleid, exist := p.dateMapper[fname]
-	if !exist {
-		styleid = 22
-	}
-
-	style, _ := f.NewStyle(fmt.Sprintf(`{"number_format": %d, "lang": "zh-cn"}`, styleid))
-	_ = f.SetCellStyle(sheet, axis, axis, style)
 }
