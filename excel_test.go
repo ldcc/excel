@@ -38,7 +38,7 @@ func (t *Test) TableName() string {
 	return "test"
 }
 
-var TestNameMap = map[string]string{
+var TestNameMap = NameMap{
 	"Ok":             "整活",
 	"Id":             "唯一索引ID",
 	"Displayno":      "显示序号",
@@ -53,6 +53,11 @@ var TestNameMap = map[string]string{
 	"Socialnum":      "身份证号",
 	"Teamname":       "审批机关",
 	"Stdt":           "戒毒开始日期",
+}
+
+var TestDateFormatter = DateMapper{
+	"Createdate": 27,
+	"Stdt":       31,
 }
 
 func TestBuildExcel(t *testing.T) {
@@ -92,6 +97,7 @@ func TestBuildExcel(t *testing.T) {
 		})
 
 	SetNameMap(TestNameMap)
+	SetDateMapper(TestDateFormatter)
 	excelFile, err := BuildExcel(list)
 	if err != nil {
 		t.Fatal(err)

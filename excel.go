@@ -16,30 +16,31 @@ const (
 	DefSheet = "Sheet1"
 	StartCol = "A"
 	StartRow = "1"
+	DefStyle = "general_style"
 )
 
 var (
-	nameMap    = make(nMap)
-	dateMapper = make(dMapper)
+	nameMap    = make(NameMap)
+	dateMapper = make(DateMapper)
+	_          = func() int {
+		dateMapper[DefStyle] = 0
+		return 0
+	}()
 )
 
 type (
-	nMap    map[string]string
-	dMapper map[string]func(string) string
-	setAxis func(v reflect.Value, col *int, row string, pn bool, fn setAxis)
-	getAxis func(v reflect.Value, col *int, row string, fn getAxis) (br bool)
+	NameMap    map[string]string
+	DateMapper map[string]int
+	setAxis    func(v reflect.Value, col *int, row string, pn bool, fn setAxis)
+	getAxis    func(v reflect.Value, col *int, row string, fn getAxis) (br bool)
 )
 
-func SetNameMap(nmap nMap) {
-	for k, v := range nmap {
-		nameMap[k] = v
-	}
+func SetNameMap(_nameMap NameMap) {
+	nameMap = _nameMap
 }
 
-func SetDateMapper(dmapper dMapper) {
-	for k, v := range dmapper {
-		dateMapper[k] = v
-	}
+func SetDateMapper(_datemapper DateMapper) {
+	dateMapper = _datemapper
 }
 
 // 导出 excel
@@ -108,16 +109,12 @@ func makeSetAxis(f *excelize.File, sheet string) setAxis {
 			case reflect.Struct:
 				switch field.Type().Name() {
 				case "LocalTime":
-					cell = field.Interface().(bmodel.LocalTime).GetTime()
-					//date := field.Interface().(bmodel.LocalTime).GetTime()
-					//cell = formatDateTime(ftype.Name, date)
+					cell = field.Interface().(bmodel.LocalTime).GetTime().UTC()
+					formatDateTime(f, sheet, strcol+row, ftype.Name)
 				case "DateTime":
-					cell = field.Interface().(bmodel.DateTime).GetTime()
-					//date := field.Interface().(bmodel.DateTime).GetTime()
-					//cell = formatDateTime(ftype.Name, date)
+					cell = field.Interface().(bmodel.DateTime).GetTime().UTC()
+					formatDateTime(f, sheet, strcol+row, ftype.Name)
 				}
-				style, _ := f.NewStyle(`{"number_format": 28, "lang": "zh-cn"}`)
-				_ = f.SetCellStyle(sheet, strcol+row, strcol+row, style)
 			default:
 				cell = field.Interface()
 			}
@@ -140,7 +137,7 @@ func LoadExcel(file *excelize.File, models interface{}, _sheet ...string) error 
 
 	var (
 		col    = new(int)
-		fmap   = make(nMap)
+		fmap   = make(NameMap)
 		loop   = makeGetAxis(file, fmap, sheet)
 		ptrV   = reflect.ValueOf(models)
 		sliceV reflect.Value
@@ -178,7 +175,7 @@ func LoadExcel(file *excelize.File, models interface{}, _sheet ...string) error 
 	return nil
 }
 
-func makeGetAxis(f *excelize.File, fmap nMap, sheet string) getAxis {
+func makeGetAxis(f *excelize.File, fmap NameMap, sheet string) getAxis {
 	fmaplen := len(nameMap)
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
 		for ; ; *col++ {
@@ -198,6 +195,7 @@ func makeGetAxis(f *excelize.File, fmap nMap, sheet string) getAxis {
 			}
 
 			// 读取单元格
+			formatDateTime(f, sheet, strCol+row, DefStyle)
 			cell, _ := f.GetCellValue(sheet, strCol+row)
 			if cell == "" && *col == 1 {
 				return true
@@ -275,31 +273,12 @@ func timeFromExcelTime(cell string) time.Time {
 	return dt
 }
 
-func formatDateTime(fname, date string) string {
-	dm, exist := dateMapper[fname]
+func formatDateTime(f *excelize.File, sheet, axis, fname string) {
+	styleid, exist := dateMapper[fname]
 	if !exist {
-		dm = defDateFormatter
+		styleid = 22
 	}
-	return dm(date)
-}
 
-func defDateFormatter(_date string) string {
-	date := []rune(_date)
-	y := date[:4]
-	m := date[5:7]
-	d := date[8:10]
-	_ = append(y, '年')
-	_ = append(m, '月')
-	_ = append(d, '日')
-	if len(date) == 19 && false {
-		hh := date[11:13]
-		mm := date[14:16]
-		ss := date[17:]
-		_ = append(hh, '时')
-		_ = append(mm, '分')
-		_ = append(ss, '秒')
-	} else {
-		date = date[:11]
-	}
-	return string(date)
+	style, _ := f.NewStyle(fmt.Sprintf(`{"number_format": %d, "lang": "zh-cn"}`, styleid))
+	_ = f.SetCellStyle(sheet, axis, axis, style)
 }
