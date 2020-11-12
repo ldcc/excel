@@ -28,17 +28,17 @@ type BaseModel struct {
 
 type Test struct {
 	BaseModel
-	Patcode     string
+	Patcode     string `qwe:"qw er"`
 	Patientname string
 	Createdate  bmodel.LocalTime
-	Stdt        bmodel.LocalTime
+	Stdt        bmodel.DateTime
 }
 
 func (t *Test) TableName() string {
 	return "test"
 }
 
-var NameMap = map[string]string{
+var TestNameMap = map[string]string{
 	"Ok":             "整活",
 	"Id":             "唯一索引ID",
 	"Displayno":      "显示序号",
@@ -72,6 +72,7 @@ func TestBuildExcel(t *testing.T) {
 			},
 			Patcode:    "123123",
 			Createdate: bmodel.NewNowLocalTime(),
+			Stdt:       bmodel.NewNowDateTime(),
 		},
 		Test{
 			BaseModel: BaseModel{
@@ -87,9 +88,11 @@ func TestBuildExcel(t *testing.T) {
 			},
 			Patcode:    "722",
 			Createdate: bmodel.NewNowLocalTime(),
+			Stdt:       bmodel.NewNowDateTime(),
 		})
 
-	excelFile, err := BuildExcel(list, NameMap)
+	SetNameMap(TestNameMap)
+	excelFile, err := BuildExcel(list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +102,8 @@ func TestBuildExcel(t *testing.T) {
 func TestLoadExcel(t *testing.T) {
 	var list []Test
 	file, _ := excelize.OpenFile(ExcelFile)
-	err := LoadExcel(file, NameMap, &list)
+	SetNameMap(TestNameMap)
+	err := LoadExcel(file, &list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,4 +126,11 @@ func TestNewval(t *testing.T) {
 		value.Elem().Elem().Elem().Elem().Elem().Type(),
 		value.Elem().Elem().Elem().Elem().Elem().Elem().Type(),
 	)
+}
+
+func TestStructTag(t *testing.T) {
+	//var data Test
+	//v:= reflect.ValueOf(data)
+	//
+	//reflect.StructTag("").Lookup()
 }
