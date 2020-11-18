@@ -61,7 +61,7 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 		col    = new(int)
 		file   = excelize.NewFile()
 		loop   = p.makeSetAxis(file, sheet)
-		sliceV = reflect.Indirect(reflect.ValueOf(_models))
+		sliceV = indirect(reflect.ValueOf(_models))
 	)
 	if sliceV.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("只能接收 Slice 类型数据")
@@ -69,7 +69,7 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 
 	sliceLen := sliceV.Len()
 	for row := 0; row < sliceLen; row++ {
-		refV := reflect.Indirect(sliceV.Index(row))
+		refV := indirect(sliceV.Index(row))
 		if refV.Interface() == nil {
 			continue
 		}
@@ -144,8 +144,7 @@ func (p *Portal) LoadExcel(file *excelize.File, models interface{}, _sheet ...st
 
 	var (
 		col    = new(int)
-		fmap   = make(NameMap)
-		loop   = p.makeGetAxis(file, fmap, sheet)
+		loop   = p.makeGetAxis(file, sheet)
 		ptrV   = reflect.ValueOf(models)
 		sliceV reflect.Value
 		valueT reflect.Type
@@ -155,13 +154,9 @@ func (p *Portal) LoadExcel(file *excelize.File, models interface{}, _sheet ...st
 		return fmt.Errorf("只能接收 Pointer 类型数据")
 	}
 
-	sliceV = ptrV.Elem()
+	sliceV = indirect(ptrV)
 	if sliceV.Kind() != reflect.Slice {
 		return fmt.Errorf("只能接收指向 Slice 类型的 Pointer")
-	}
-
-	for k, v := range p.nameMap {
-		fmap[v] = k
 	}
 
 	valueT = sliceV.Type().Elem()
@@ -182,11 +177,15 @@ func (p *Portal) LoadExcel(file *excelize.File, models interface{}, _sheet ...st
 	return nil
 }
 
-func (p *Portal) makeGetAxis(f *excelize.File, fmap NameMap, sheet string) getAxis {
-	fmaplen := len(p.nameMap)
+func (p *Portal) makeGetAxis(f *excelize.File, sheet string) getAxis {
+	maplen := len(p.nameMap)
+	fmap := make(NameMap, maplen)
+	for k, v := range p.nameMap {
+		fmap[v] = k
+	}
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
 		for ; ; *col++ {
-			if *col >= fmaplen {
+			if *col >= maplen {
 				return true
 			}
 
