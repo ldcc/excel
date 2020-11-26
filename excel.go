@@ -58,7 +58,6 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 	}
 
 	var (
-		col    = new(int)
 		file   = excelize.NewFile()
 		loop   = p.makeSetAxis(file, sheet)
 		sliceV = indirect(reflect.ValueOf(_models))
@@ -74,13 +73,14 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 			continue
 		}
 
-		*col = 1
 		// row 初始为 0，为字段名空 1 行，所以 +2
-		loop(refV, col, strconv.Itoa(row+2), row <= 0, loop)
+		go func(row int) {
+			col := 1
+			loop(refV, &col, strconv.Itoa(row+2), row <= 0, loop)
+		}(row)
 	}
-	*col--
 
-	return file, file.SetColWidth(sheet, StartCol, computeColumn(*col), 20)
+	return file, file.SetColWidth(sheet, StartCol, computeColumn(len(p.nameMap)), 20)
 }
 
 func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
