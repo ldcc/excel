@@ -2,6 +2,7 @@ package excel
 
 import (
 	"fmt"
+	"github.com/siddontang/go/num"
 	"reflect"
 	"time"
 
@@ -58,6 +59,8 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 	}
 
 	var (
+		runing int
+		done   = make(chan int)
 		file   = excelize.NewFile()
 		loop   = p.makeSetAxis(file, sheet)
 		sliceV = indirect(reflect.ValueOf(_models))
@@ -74,13 +77,23 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 		}
 
 		// row 初始为 0，为字段名空 1 行，所以 +2
+		runing++
 		go func(row int) {
 			col := 1
 			loop(refV, &col, strconv.Itoa(row+2), row <= 0, loop)
+			done <- col
 		}(row)
 	}
 
-	return file, file.SetColWidth(sheet, StartCol, computeColumn(len(p.nameMap)), 20)
+	maxcol := 0
+	for i := 0; i < runing; i++ {
+		select {
+		case col := <-done:
+			maxcol = num.MaxInt(maxcol, col)
+		}
+	}
+
+	return file, file.SetColWidth(sheet, StartCol, evalColumn(maxcol), 20)
 }
 
 func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
@@ -106,7 +119,7 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 			if !exist {
 				continue
 			}
-			strcol := computeColumn(*col)
+			strcol := evalColumn(*col)
 			if pn {
 				_ = f.SetCellValue(sheet, strcol+StartRow, name)
 			}
@@ -189,7 +202,7 @@ func (p *Portal) makeGetAxis(f *excelize.File, sheet string) getAxis {
 				return true
 			}
 
-			strCol := computeColumn(*col)
+			strCol := evalColumn(*col)
 			name, _ := f.GetCellValue(sheet, strCol+StartRow)
 			if name == "" {
 				return *col == 1
@@ -264,7 +277,7 @@ func indirect(v reflect.Value) reflect.Value {
 }
 
 // 根据列数计算相应的 Excel 列名
-func computeColumn(column int) string {
+func evalColumn(column int) string {
 	if column == 0 {
 		return ""
 	}
@@ -272,7 +285,7 @@ func computeColumn(column int) string {
 	if column%26 == 0 {
 		diff--
 	}
-	return computeColumn(diff) + string(rune(column-1)%26+'A')
+	return evalColumn(diff) + string(rune(column-1)%26+'A')
 }
 
 func timeFromExcelTime(cell string) time.Time {
