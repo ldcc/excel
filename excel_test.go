@@ -28,10 +28,15 @@ type BaseModel struct {
 
 type Test struct {
 	BaseModel
-	Patcode     string `qwe:"qw er"`
-	Patientname string
-	Createdate  bmodel.LocalTime
-	Stdt        bmodel.DateTime
+	Patcode        string
+	Patientname    string
+	Createdate     bmodel.LocalTime
+	Homedetailaddr string
+	Socialnum      string
+	Teamname       string
+	Treatstartdate bmodel.LocalTime
+	Treatenddate   bmodel.LocalTime
+	Admissiondate  bmodel.LocalTime
 }
 
 func (t *Test) TableName() string {
@@ -52,7 +57,9 @@ var TestNameMap = NameMap{
 	"Homedetailaddr": "户籍地（省、市、县）",
 	"Socialnum":      "身份证号",
 	"Teamname":       "审批机关",
-	"Stdt":           "戒毒开始日期",
+	"Treatstartdate": "戒毒开始日期",
+	"Treatenddate":   "戒毒结束日期",
+	"Admissiondate":  "入所日期",
 }
 
 var TestDateFormatter = DateMapper{
@@ -77,7 +84,6 @@ func TestBuildExcel(t *testing.T) {
 			},
 			Patcode:    "123123",
 			Createdate: bmodel.NewNowLocalTime(),
-			Stdt:       bmodel.NewNowDateTime(),
 		},
 		Test{
 			BaseModel: BaseModel{
@@ -93,7 +99,6 @@ func TestBuildExcel(t *testing.T) {
 			},
 			Patcode:    "722",
 			Createdate: bmodel.NewNowLocalTime(),
-			Stdt:       bmodel.NewNowDateTime(),
 		})
 
 	portal := NewPortal(TestNameMap).SetDateMapper(TestDateFormatter)

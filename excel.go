@@ -197,27 +197,25 @@ func (p *Portal) makeGetAxis(f *excelize.File, sheet string) getAxis {
 		fmap[v] = k
 	}
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
+		emptycol := 1
 		for ; ; *col++ {
-			if *col >= maplen {
-				return true
-			}
-
 			strCol := evalColumn(*col)
 			name, _ := f.GetCellValue(sheet, strCol+StartRow)
 			if name == "" {
-				return *col == 1
-			}
-
-			fname, exist := fmap[name]
-			if !exist {
-				continue
+				return emptycol == *col
 			}
 
 			// 读取单元格
 			p.formatDateTime(f, sheet, strCol+row, DefStyle)
 			cell, _ := f.GetCellValue(sheet, strCol+row)
-			if cell == "" && *col == 1 {
-				return true
+			if cell == "" {
+				emptycol++
+				continue
+			}
+
+			fname, exist := fmap[name]
+			if !exist {
+				continue
 			}
 
 			fieldV := v.FieldByName(fname)
