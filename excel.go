@@ -76,10 +76,10 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 			continue
 		}
 
-		// row 初始为 0，为字段名空 1 行，所以 +2
 		runing++
 		go func(row int) {
 			col := 1
+			// row 初始为 0，为字段名空 1 行，所以 +2
 			loop(refV, &col, strconv.Itoa(row+2), row <= 0, loop)
 			done <- col
 		}(row)
@@ -286,6 +286,7 @@ func evalColumn(column int) string {
 	return evalColumn(diff) + string(rune(column-1)%26+'A')
 }
 
+// 从 Excel 时间获取 Unix 时间戳
 func timeFromExcelTime(cell string) time.Time {
 	unix, err := strconv.ParseFloat(cell, 64)
 	if err != nil {
