@@ -103,7 +103,7 @@ func TestBuildExcel(t *testing.T) {
 			Createdate: bmodel.NewNowLocalTime(),
 		})
 
-	portal := NewPortal(TestNameMap)//.SetDateMapper(TestDateFormatter)
+	portal := NewPortal(TestNameMap).SetDateMapper(TestDateFormatter)
 	excelFile, err := portal.BuildExcel(list)
 	if err != nil {
 		t.Fatal(err)
@@ -113,9 +113,13 @@ func TestBuildExcel(t *testing.T) {
 
 func TestLoadExcel(t *testing.T) {
 	var list []Test
-	file, _ := excelize.OpenFile(LoadTestFile)
+	file, err := excelize.OpenFile(LoadTestFile)
+	if err != nil {
+		t.Fatal("读取 excel 文件失败，请检查文件是否存在")
+	}
+
 	portal := NewPortal(TestNameMap)
-	err := portal.LoadExcel(file, &list)
+	err = portal.LoadExcel(file, &list)
 	if err != nil {
 		t.Fatal(err)
 	}
