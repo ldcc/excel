@@ -10,6 +10,8 @@ import (
 
 const (
 	ExcelFile = "test.xlsx"
+	LoadTestFile = "load.xlsx"
+	BuildTestFile = "build.xlsx"
 )
 
 type Data struct {
@@ -101,7 +103,7 @@ func TestBuildExcel(t *testing.T) {
 			Createdate: bmodel.NewNowLocalTime(),
 		})
 
-	portal := NewPortal(TestNameMap).SetDateMapper(TestDateFormatter)
+	portal := NewPortal(TestNameMap)//.SetDateMapper(TestDateFormatter)
 	excelFile, err := portal.BuildExcel(list)
 	if err != nil {
 		t.Fatal(err)
@@ -111,7 +113,7 @@ func TestBuildExcel(t *testing.T) {
 
 func TestLoadExcel(t *testing.T) {
 	var list []Test
-	file, _ := excelize.OpenFile(ExcelFile)
+	file, _ := excelize.OpenFile(LoadTestFile)
 	portal := NewPortal(TestNameMap)
 	err := portal.LoadExcel(file, &list)
 	if err != nil {

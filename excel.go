@@ -292,13 +292,10 @@ func evalColumn(column int) string {
 
 // 从 Excel 时间获取 Unix 时间戳
 func timeFromExcelTime(cell string) time.Time {
-	fmt.Println(cell)
 	unix, err := strconv.ParseFloat(cell, 64)
 	if err != nil {
 		return time.Time{}
 	}
-
-	fmt.Println(unix)
 
 	dt, err := excelize.ExcelDateToTime(unix, false)
 	if err != nil {
