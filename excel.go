@@ -2,15 +2,13 @@ package excel
 
 import (
 	"fmt"
-	"github.com/siddontang/go/num"
 	"reflect"
-	"time"
-
-	//_ "reflect"
 	"strconv"
+	"time"
 
 	"git.gdqlyt.com.cn/go/base/beego/bmodel"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
+	"github.com/siddontang/go/num"
 )
 
 const (
@@ -97,6 +95,7 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 }
 
 func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
+	var t001 = time.Time{}.UTC()
 	return func(v reflect.Value, col *int, row string, pn bool, fn setAxis) {
 		var (
 			ftype reflect.StructField
@@ -114,7 +113,7 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 				continue
 			}
 
-			// 写入单元格
+			// 写入列名
 			name, exist := p.nameMap[ftype.Name]
 			if !exist {
 				continue
@@ -130,14 +129,19 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 				switch field.Type().Name() {
 				case "LocalTime":
 					cell = field.Interface().(bmodel.LocalTime).GetTime().UTC()
-					p.formatDateTime(f, sheet, strcol+row, ftype.Name)
 				case "DateTime":
 					cell = field.Interface().(bmodel.DateTime).GetTime().UTC()
-					p.formatDateTime(f, sheet, strcol+row, ftype.Name)
 				}
+				if cell == t001 {
+					*col++
+					continue
+				}
+				p.formatDateTime(f, sheet, strcol+row, ftype.Name)
 			default:
 				cell = field.Interface()
 			}
+
+			// 写入单元格
 			err := f.SetCellValue(sheet, strcol+row, cell)
 			if err != nil {
 				fmt.Println(err, cell)
@@ -288,10 +292,13 @@ func evalColumn(column int) string {
 
 // 从 Excel 时间获取 Unix 时间戳
 func timeFromExcelTime(cell string) time.Time {
+	fmt.Println(cell)
 	unix, err := strconv.ParseFloat(cell, 64)
 	if err != nil {
 		return time.Time{}
 	}
+
+	fmt.Println(unix)
 
 	dt, err := excelize.ExcelDateToTime(unix, false)
 	if err != nil {

@@ -83,7 +83,7 @@ func TestBuildExcel(t *testing.T) {
 				Dataversion:  2,
 			},
 			Patcode:    "123123",
-			Createdate: bmodel.NewNowLocalTime(),
+			//Createdate: bmodel.NewNowLocalTime(),
 		},
 		Test{
 			BaseModel: BaseModel{
