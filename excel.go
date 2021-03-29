@@ -226,12 +226,18 @@ func (p *Portal) makeGetAxis(f *excelize.File, sheet string) getAxis {
 			switch fieldV.Kind() {
 			case reflect.String:
 				fieldV.SetString(cell)
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				atoi, err := strconv.Atoi(cell)
 				if err != nil {
 					continue
 				}
 				fieldV.SetInt(int64(atoi))
+			case reflect.Float32, reflect.Float64:
+				atoi, err := strconv.ParseFloat(cell, 64)
+				if err != nil {
+					continue
+				}
+				fieldV.SetFloat(atoi)
 			case reflect.Struct:
 				switch fieldV.Type().Name() {
 				case "BaseModel":
