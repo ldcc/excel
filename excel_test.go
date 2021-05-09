@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	ExcelFile     = "test.xlsx"
-	LoadTestFile  = "load.xlsx"
+	ExcelFile = "test.xlsx"
+	LoadTestFile = "load.xlsx"
 	BuildTestFile = "build.xlsx"
 )
 
@@ -39,6 +39,8 @@ type Test struct {
 	Treatstartdate bmodel.LocalTime
 	Treatenddate   bmodel.LocalTime
 	Admissiondate  bmodel.LocalTime
+	F1             float32
+	F2             float64
 }
 
 func (t *Test) TableName() string {
@@ -62,6 +64,8 @@ var TestNameMap = NameMap{
 	"Treatstartdate": "戒毒开始日期",
 	"Treatenddate":   "戒毒结束日期",
 	"Admissiondate":  "入所日期",
+	"F1":             "F1",
+	"F2":             "F2",
 }
 
 var TestDateFormatter = DateMapper{
@@ -85,7 +89,8 @@ func TestBuildExcel(t *testing.T) {
 				Dataversion:  2,
 			},
 			Patcode: "123123",
-			//Createdate: bmodel.NewNowLocalTime(),
+			F1:      3.1111,
+			F2:      3.1111,
 		},
 		Test{
 			BaseModel: BaseModel{
