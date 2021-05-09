@@ -68,6 +68,9 @@ func (p *Portal) BuildExcel(_models interface{}, _sheet ...string) (*excelize.Fi
 	}
 
 	sliceLen := sliceV.Len()
+	if sliceLen == 0 {
+		return file, nil
+	}
 	for row := 0; row < sliceLen; row++ {
 		refV := indirect(sliceV.Index(row))
 		if refV.Interface() == nil {
@@ -123,6 +126,7 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 				_ = f.SetCellValue(sheet, strcol+StartRow, name)
 			}
 
+			// 写入单元格
 			var cell interface{}
 			switch field.Kind() {
 			case reflect.Struct:
@@ -141,7 +145,6 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 				cell = field.Interface()
 			}
 
-			// 写入单元格
 			err := f.SetCellValue(sheet, strcol+row, cell)
 			if err != nil {
 				fmt.Println(err, cell)

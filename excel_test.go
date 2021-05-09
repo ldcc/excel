@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	ExcelFile = "test.xlsx"
-	LoadTestFile = "load.xlsx"
+	ExcelFile     = "test.xlsx"
+	LoadTestFile  = "load.xlsx"
 	BuildTestFile = "build.xlsx"
 )
 
@@ -84,7 +84,7 @@ func TestBuildExcel(t *testing.T) {
 				Hospitalcode: "29",
 				Dataversion:  2,
 			},
-			Patcode:    "123123",
+			Patcode: "123123",
 			//Createdate: bmodel.NewNowLocalTime(),
 		},
 		Test{
@@ -104,7 +104,7 @@ func TestBuildExcel(t *testing.T) {
 		})
 
 	portal := NewPortal(TestNameMap).SetDateMapper(TestDateFormatter)
-	excelFile, err := portal.BuildExcel(list)
+	excelFile, err := portal.BuildExcel(list[:0])
 	if err != nil {
 		t.Fatal(err)
 	}
