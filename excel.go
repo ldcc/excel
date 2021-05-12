@@ -11,20 +11,6 @@ import (
 	"github.com/siddontang/go/num"
 )
 
-const (
-	DefSheet = "Sheet1"
-	StartCol = "A"
-	StartRow = "1"
-	DefStyle = "general_style"
-)
-
-type (
-	NameMap    map[string]string
-	DateMapper map[string]int
-	setAxis    func(v reflect.Value, col *int, row string, pn bool, fn setAxis)
-	getAxis    func(v reflect.Value, col *int, row string, fn getAxis) (br bool)
-)
-
 type Portal struct {
 	nameMap    NameMap
 	dateMapper DateMapper
@@ -206,15 +192,15 @@ func (p *Portal) makeGetAxis(f *excelize.File, sheet string) getAxis {
 	return func(v reflect.Value, col *int, row string, fn getAxis) bool {
 		emptycol := 1
 		for ; ; *col++ {
-			strCol := evalColumn(*col)
-			name, _ := f.GetCellValue(sheet, strCol+StartRow)
+			strcol := evalColumn(*col)
+			name, _ := f.GetCellValue(sheet, strcol+StartRow)
 			if name == "" {
 				return emptycol == *col
 			}
 
 			// 读取单元格
-			p.formatDateTime(f, sheet, strCol+row, DefStyle)
-			cell, _ := f.GetCellValue(sheet, strCol+row)
+			p.formatDateTime(f, sheet, strcol+row, DefStyle)
+			cell, _ := f.GetCellValue(sheet, strcol+row)
 			if cell == "" {
 				emptycol++
 				continue
@@ -267,49 +253,23 @@ func (p *Portal) formatDateTime(f *excelize.File, sheet, axis, fname string) {
 	_ = f.SetCellStyle(sheet, axis, axis, style)
 }
 
-func makeval(t reflect.Type) reflect.Value {
-	switch t.Kind() {
-	case reflect.Ptr:
-		v0 := reflect.New(t).Elem()
-		v1 := makeval(t.Elem())
-		v0.Set(reflect.New(v1.Type()))
-		v0.Elem().Set(v1)
-		return v0
-	default:
-		return reflect.New(t).Elem()
-	}
-}
-
-func indirect(v reflect.Value) reflect.Value {
-	if v.Kind() != reflect.Ptr {
-		return v
-	}
-	return indirect(v.Elem())
-}
-
-// 根据列数计算相应的 Excel 列名
-func evalColumn(column int) string {
-	if column == 0 {
-		return ""
-	}
-	diff := column / 26
-	if column%26 == 0 {
-		diff--
-	}
-	return evalColumn(diff) + string(rune(column-1)%26+'A')
-}
-
-// 从 Excel 时间获取 Unix 时间戳
-func timeFromExcelTime(cell string) time.Time {
-	unix, err := strconv.ParseFloat(cell, 64)
-	if err != nil {
-		return time.Time{}
+/**
+ * 设置指定行一行的的数据
+ */
+func (p *Portal) AppendRow(file *excelize.File, _rowIndex int, rowSpan []string, _sheet ...string) error {
+	var sheet = file.GetSheetName(0)
+	if len(_sheet) > 0 {
+		sheet = _sheet[0]
 	}
 
-	dt, err := excelize.ExcelDateToTime(unix, false)
-	if err != nil {
-		return time.Time{}
+	row := strconv.Itoa(_rowIndex)
+	for col, cell := range rowSpan {
+		strcol := evalColumn(col + 1)
+		err := file.SetCellStr(sheet, strcol+row, cell)
+		if err != nil {
+			fmt.Println(err, cell)
+			_ = file.SetCellValue(sheet, strcol+row, err.Error())
+		}
 	}
-
-	return dt
+	return nil
 }

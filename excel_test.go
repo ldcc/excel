@@ -5,13 +5,14 @@ import (
 	"git.gdqlyt.com.cn/go/base/beego/bmodel"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"reflect"
+	"strings"
 	"testing"
 )
 
 const (
-	ExcelFile = "test.xlsx"
-	LoadTestFile = "load.xlsx"
-	BuildTestFile = "build.xlsx"
+	ExcelFile     = "out/test.xlsx"
+	LoadTestFile  = "out/load.xlsx"
+	BuildTestFile = "out/build.xlsx"
 )
 
 type Data struct {
@@ -74,6 +75,7 @@ var TestDateFormatter = DateMapper{
 }
 
 func TestBuildExcel(t *testing.T) {
+	// 测试 BuildExcel
 	var list []Test
 	list = append(list,
 		Test{
@@ -109,10 +111,19 @@ func TestBuildExcel(t *testing.T) {
 		})
 
 	portal := NewPortal(TestNameMap).SetDateMapper(TestDateFormatter)
-	excelFile, err := portal.BuildExcel(list[:0])
+	excelFile, err := portal.BuildExcel(list)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// 测试 AppendRow
+	var rowSpan []string
+	rowSpan = strings.Split("|合计||1|||3.000|63.30", "|")
+	err = portal.AppendRow(excelFile, 5, rowSpan)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_ = excelFile.SaveAs(ExcelFile)
 }
 
