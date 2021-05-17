@@ -117,6 +117,8 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 			switch field.Kind() {
 			case reflect.Struct:
 				switch field.Type().Name() {
+				case "Time":
+					cell = field.Interface().(time.Time).UTC()
 				case "LocalTime":
 					cell = field.Interface().(bmodel.LocalTime).GetTime().UTC()
 				case "DateTime":
@@ -126,6 +128,7 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 					*col++
 					continue
 				}
+				cell = cell.(time.Time).Add(8 * time.Hour)
 				p.formatDateTime(f, sheet, strcol+row, ftype.Name)
 			default:
 				cell = field.Interface()
@@ -272,4 +275,13 @@ func (p *Portal) AppendRow(file *excelize.File, _rowIndex int, rowSpan []string,
 		}
 	}
 	return nil
+}
+
+func (p *Portal) Merge(file *excelize.File, hcell, vcell string, _sheet ...string) error {
+	var sheet = file.GetSheetName(0)
+	if len(_sheet) > 0 {
+		sheet = _sheet[0]
+	}
+
+	return file.MergeCell(sheet, hcell, vcell)
 }

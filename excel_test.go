@@ -69,8 +69,9 @@ var TestNameMap = NameMap{
 	"F2":             "F2",
 }
 
+// DateFormatter 的配置请参考 README.md
 var TestDateFormatter = DateMapper{
-	"Createdate": 27,
+	//"Createdate": 27,
 	"Stdt":       31,
 }
 
@@ -111,7 +112,7 @@ func TestBuildExcel(t *testing.T) {
 		})
 
 	portal := NewPortal(TestNameMap).SetDateMapper(TestDateFormatter)
-	excelFile, err := portal.BuildExcel(list)
+	file, err := portal.BuildExcel(list)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,17 +120,25 @@ func TestBuildExcel(t *testing.T) {
 	// 测试 AppendRow
 	var rowSpan []string
 	rowSpan = strings.Split("|合计||1|||3.000|63.30", "|")
-	err = portal.AppendRow(excelFile, 5, rowSpan)
+	err = portal.AppendRow(file, 5, rowSpan)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_ = excelFile.SaveAs(ExcelFile)
+	// 测试 Merge
+	err = portal.Merge(file, "D1", "E1")
+	err = portal.Merge(file, "E1", "F1")
+	//err = portal.Merge(file, "D1", "E2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_ = file.SaveAs(ExcelFile)
 }
 
 func TestLoadExcel(t *testing.T) {
 	var list []Test
-	file, err := excelize.OpenFile(LoadTestFile)
+	file, err := excelize.OpenFile(ExcelFile)
 	if err != nil {
 		t.Fatal("读取 excel 文件失败，请检查文件是否存在")
 	}
