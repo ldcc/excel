@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"git.gdqlyt.com.cn/go/base/beego/bmodel"
@@ -136,7 +137,6 @@ func (p *Portal) makeSetAxis(f *excelize.File, sheet string) setAxis {
 
 			err := f.SetCellValue(sheet, strcol+row, cell)
 			if err != nil {
-				fmt.Println(err, cell)
 				_ = f.SetCellValue(sheet, strcol+row, err.Error())
 			}
 			*col++
@@ -316,4 +316,11 @@ func (p *Portal) AppendGrid(file *excelize.File, _rowIndex int, grid [][]string,
 	}
 
 	return p
+}
+
+func (p *Portal) FormatGrid(formats ...string) (grid [][]string) {
+	for _, row := range formats {
+		grid = append(grid, strings.Split(row, "|"))
+	}
+	return grid
 }

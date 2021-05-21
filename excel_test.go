@@ -118,13 +118,10 @@ func TestBuildExcel(t *testing.T) {
 	}
 
 	// 测试 AppendGrid
-	var grid [][]string
-	var format = "" +
-		"||药品名称|规格|出库数量|-|-|-|厂家|价格|批号\r" +
-		"||^|^|大单位数量|药库单位|小单位数量|药房单位|^|^|^\r"
-	for _, row := range strings.Split(format, "\r") {
-		grid = append(grid, strings.Split(row, "|"))
-	}
+	var grid = portal.FormatGrid(
+		"||药品名称|规格|出库数量|-|-|-|厂家|价格|批号",
+		"||^|^|大单位数量|药库单位|小单位数量|药房单位|^|^|^",
+	)
 	portal.AppendGrid(file, 5, grid)
 
 	// 测试 AppendRow
