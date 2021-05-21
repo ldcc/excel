@@ -256,10 +256,15 @@ func (p *Portal) formatDateTime(f *excelize.File, sheet, axis, fname string) {
 	_ = f.SetCellStyle(sheet, axis, axis, style)
 }
 
+func (p *Portal) formatCenter(f *excelize.File, sheet, axis string) {
+	style, _ := f.NewStyle(`{"alignment":{"horizontal":"center","vertical":"center"}}`)
+	_ = f.SetCellStyle(sheet, axis, axis, style)
+}
+
 /**
  * 设置指定行一行的的数据
  */
-func (p *Portal) AppendRow(file *excelize.File, _rowIndex int, rowSpan []string, _sheet ...string) error {
+func (p *Portal) AppendRow(file *excelize.File, _rowIndex int, rowSpan []string, _sheet ...string) *Portal {
 	var sheet = file.GetSheetName(0)
 	if len(_sheet) > 0 {
 		sheet = _sheet[0]
@@ -270,18 +275,45 @@ func (p *Portal) AppendRow(file *excelize.File, _rowIndex int, rowSpan []string,
 		strcol := evalColumn(col + 1)
 		err := file.SetCellStr(sheet, strcol+row, cell)
 		if err != nil {
-			fmt.Println(err, cell)
 			_ = file.SetCellValue(sheet, strcol+row, err.Error())
 		}
 	}
-	return nil
+	return p
 }
 
-func (p *Portal) Merge(file *excelize.File, hcell, vcell string, _sheet ...string) error {
+/**
+ * Grid :: [[String]]
+ * Grid[i] 为列
+ * "-" 为向左合并项
+ * "^" 为向上合并项空项
+ */
+func (p *Portal) AppendGrid(file *excelize.File, _rowIndex int, grid [][]string, _sheet ...string) *Portal {
 	var sheet = file.GetSheetName(0)
 	if len(_sheet) > 0 {
 		sheet = _sheet[0]
 	}
 
-	return file.MergeCell(sheet, hcell, vcell)
+	var err error
+	for offset, rowSpan := range grid {
+		row := strconv.Itoa(_rowIndex + offset)
+		for col, cell := range rowSpan {
+			prevcol := evalColumn(col)
+			strcol := evalColumn(col + 1)
+			switch cell {
+			case "-":
+				err = file.MergeCell(sheet, prevcol+row, strcol+row)
+			case "^":
+				prevrow := strconv.Itoa(_rowIndex + offset - 1)
+				err = file.MergeCell(sheet, strcol+prevrow, strcol+row)
+			default:
+				err = file.SetCellStr(sheet, strcol+row, cell)
+			}
+			if err != nil {
+				_ = file.SetCellValue(sheet, strcol+row, err.Error())
+			}
+			p.formatCenter(file, sheet, strcol+row)
+		}
+	}
+
+	return p
 }

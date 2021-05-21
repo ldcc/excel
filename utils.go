@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	DefSheet = "Sheet1"
-	StartCol = "A"
-	StartRow = "1"
-	DefStyle = "general_style"
+	DefSheet    = "Sheet1"
+	StartCol    = "A"
+	StartRow    = "1"
+	DefStyle    = "general_style"
+	CenterStyle = "center_style"
 )
 
 type (

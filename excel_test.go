@@ -72,7 +72,7 @@ var TestNameMap = NameMap{
 // DateFormatter 的配置请参考 README.md
 var TestDateFormatter = DateMapper{
 	//"Createdate": 27,
-	"Stdt":       31,
+	"Stdt": 31,
 }
 
 func TestBuildExcel(t *testing.T) {
@@ -117,22 +117,20 @@ func TestBuildExcel(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// 测试 AppendGrid
+	var grid [][]string
+	var format = "" +
+		"||药品名称|规格|出库数量|-|-|-|厂家|价格|批号\r" +
+		"||^|^|大单位数量|药库单位|小单位数量|药房单位|^|^|^\r"
+	for _, row := range strings.Split(format, "\r") {
+		grid = append(grid, strings.Split(row, "|"))
+	}
+	portal.AppendGrid(file, 5, grid)
+
 	// 测试 AppendRow
 	var rowSpan []string
-	rowSpan = strings.Split("|合计||1|||3.000|63.30", "|")
-	err = portal.AppendRow(file, 5, rowSpan)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// 测试 Merge
-	err = portal.Merge(file, "D1", "E1")
-	err = portal.Merge(file, "E1", "F1")
-	//err = portal.Merge(file, "D1", "E2")
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	rowSpan = strings.Split("|合计|dsfa|1|das|123|3.000|63.30|asd|wqe|vxc", "|")
+	portal.AppendRow(file, 7, rowSpan)
 	_ = file.SaveAs(ExcelFile)
 }
 
