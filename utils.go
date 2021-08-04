@@ -1,18 +1,18 @@
 package excel
 
 import (
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/xuri/excelize/v2"
 )
 
 const (
-	DefSheet    = "Sheet1"
-	StartCol    = "A"
-	StartRow    = "1"
-	DefStyle    = "general_style"
-	CenterStyle = "center_style"
+	DefSheet = "Sheet1"
+	StartCol = "A"
+	StartRow = "1"
+	DefStyle = "general_style"
 )
 
 type (

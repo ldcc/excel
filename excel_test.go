@@ -2,11 +2,12 @@ package excel
 
 import (
 	"fmt"
-	"git.gdqlyt.com.cn/go/base/beego/bmodel"
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"reflect"
 	"strings"
 	"testing"
+
+	"git.gdqlyt.com.cn/go/base/beego/bmodel"
+	"github.com/xuri/excelize/v2"
 )
 
 const (
